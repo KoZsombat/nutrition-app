@@ -45,8 +45,8 @@ export default function StatsDisplay({
             />
           </div>
         </div>
-        <p className="font-bold text-center text-sm sm:text-sm">Calories</p>
-        <p className="text-center text-sm sm:text-sm">
+        <p className="font-bold text-center text-sm sm:text-xs">Calories</p>
+        <p className="text-center text-sm sm:text-xs">
           {calories} / {calorieMax}
         </p>
       </div>

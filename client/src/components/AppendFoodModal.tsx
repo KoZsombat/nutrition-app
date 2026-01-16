@@ -75,7 +75,7 @@ export default function AppendFoodModal({
                   type="numeric"
                   placeholder="grams"
                   className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg w-16 sm:w-24 p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={activeItem === f.name ? mealGrams : ''}
+                  defaultValue={0}
                   onFocus={() => setActiveItem(f.name)}
                   onChange={(e) => setMealGrams(e.target.value.replace(/[^0-9]/g, ''))}
                 />

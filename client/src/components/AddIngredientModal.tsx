@@ -74,16 +74,21 @@ export default function AddIngredientModal({
       const response = await fetch(`${apiUrl}/api/ProductBarcodeSearch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ barcode }),
+        body: JSON.stringify({ query: barcode }),
       });
       const json = await response.json();
-      if (json.status === 1) {
-        const product = json.product;
-        setLocalName(product.product_name ?? '');
-        setLocalCalories(product.nutriments?.['energy-kcal_100g']?.toString() ?? '0');
-        setLocalProtein(product.nutriments?.['proteins_100g']?.toString() ?? '0');
-        setLocalCarbs(product.nutriments?.['carbohydrates_100g']?.toString() ?? '0');
-        setLocalFat(product.nutriments?.['fat_100g']?.toString() ?? '0');
+      if (json.products && json.products.length > 0) {
+        const product = json.products[0];
+        setLocalName(product.name ?? '');
+        setLocalCalories(product.calories?.toString() ?? '0');
+        setLocalProtein(product.protein?.toString() ?? '0');
+        setLocalCarbs(product.carbs?.toString() ?? '0');
+        setLocalFat(product.fat?.toString() ?? '0');
+        setAlertMsg('Product found from barcode!');
+        setAlertType('success');
+      } else {
+        setAlertMsg('Product not found in database');
+        setAlertType('error');
       }
     } catch (error) {
       setAlertMsg('Failed to fetch product data from barcode.');
@@ -221,15 +226,15 @@ export default function AddIngredientModal({
     <div className="fixed pt-5 inset-0 bg-white z-20 overflow-hidden flex flex-col">
       {isBarcode && (
         <BarcodeNumberScanner
-            onDetected={(barcode) => {
-                console.log("OCR Barcode:", barcode);
-                fetchBarcodeProduct(barcode);
-                setIsBarcode(false);
-            }}
-            onClose={() => setIsBarcode(false)}
+          onDetected={(barcode) => {
+            console.log('OCR Barcode:', barcode);
+            fetchBarcodeProduct(String(barcode));
+            setIsBarcode(false);
+          }}
+          onClose={() => setIsBarcode(false)}
         />
       )}
-      {isNutTable && <p>asd</p>}
+      {isNutTable && <h1>asd</h1>}
       <div className="flex flex-row justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-b border-gray-200 bg-white flex-shrink-0">
         <p className="text-3xl sm:text-4xl font-bold text-gray-900">
           {editMode ? 'Edit' : 'Add'} Ingredient
@@ -285,13 +290,9 @@ export default function AddIngredientModal({
                     type="text"
                     placeholder="e.g. chicken breast, apple, rice..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <button
-                    className="px-2 py-1.5 rounded-lg bg-[#3a3a3cff] text-white font-medium hover:bg-[#4a4a4cff] transition-all active:scale-95 cursor-pointer text-sm md:text-xs"
-                    style={{ whiteSpace: 'nowrap' }}
-                    onClick={() => {
-                      fetchProducts(searchTerm);
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      fetchProducts(e.target.value);
                       setSelectedOption(null);
                       setLocalName('');
                       setLocalCalories('');
@@ -299,10 +300,7 @@ export default function AddIngredientModal({
                       setLocalCarbs('');
                       setLocalFat('');
                     }}
-                    disabled={searchTerm.length < 3 || loading}
-                  >
-                    Search
-                  </button>
+                  />
                 </div>
                 <label
                   className="block w-full text-sm md:text-xs font-medium text-gray-900 mb-1"
@@ -385,7 +383,7 @@ export default function AddIngredientModal({
                   </span>
                   <span className="text-[10px] font-semibold text-gray-900">Scan Barcode</span>
                 </button>
-                <button
+                {/* <button
                   className="flex flex-col items-center justify-center px-2 py-2 rounded-lg shadow bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all border border-gray-300 focus:outline-none group"
                   style={{ minWidth: 80 }}
                   onClick={() => setIsNutTable(true)}
@@ -396,7 +394,7 @@ export default function AddIngredientModal({
                   <span className="text-[10px] font-semibold text-gray-900">
                     Scan Nutrition Table
                   </span>
-                </button>
+                </button> */}
               </div>
             ) : null}
             <div>

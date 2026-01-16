@@ -21,11 +21,30 @@ export default function History({
 }) {
   if (!visible) return null;
 
+  // Helpers to work with local (timezone-agnostic) dates
+  function toLocalDateKey(d: string | number | Date) {
+    const date = new Date(d);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`; // YYYY-MM-DD in local time
+  }
+
+  function parseLocalDate(dateStr: string) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1); // Local midnight
+  }
+
+  function formatLocalDate(dateStr: string) {
+    const d = parseLocalDate(dateStr);
+    return d.toLocaleDateString();
+  }
+
   // Group entries by date and sum macros for each day
   function groupByDate(entries: EatenHistory[]) {
     const grouped: { [date: string]: EatenHistory } = {};
     for (const entry of entries) {
-      const dateKey = new Date(entry.date).toISOString().slice(0, 10); // YYYY-MM-DD
+      const dateKey = toLocalDateKey(entry.date); // YYYY-MM-DD (local)
       if (!grouped[dateKey]) {
         grouped[dateKey] = {
           name: '',
@@ -42,9 +61,7 @@ export default function History({
       grouped[dateKey].fat += entry.fat;
     }
     // Return as array, sorted descending by date
-    return Object.values(grouped).sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    return Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
   }
 
   const groupedEatenData = groupByDate(eatenData || []);
@@ -56,7 +73,7 @@ export default function History({
     let prevDate: Date | null = null;
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
-      const entryDate = new Date(entry.date);
+      const entryDate = parseLocalDate(entry.date);
       if (prevDate) {
         const diff = (prevDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
         if (diff > 1) break; // missed a day
@@ -103,7 +120,7 @@ export default function History({
               >
                 <div className="flex flex-row items-center gap-2 mb-2">
                   <span className="text-base font-bold text-gray-800 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
-                    {new Date(entry.date).toLocaleDateString()}
+                    {formatLocalDate(entry.date)}
                   </span>
                 </div>
                 <div className="flex flex-row flex-wrap gap-4 text-base text-gray-900 font-medium">

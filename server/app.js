@@ -21,15 +21,26 @@ app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 
-const globalLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 60,
-  message: 'Too many requests from this IP, please try again later',
+// Auth: 10 requests per minute
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests, please try again later',
 });
-app.use(globalLimiter);
 
-app.use('/auth', authRouter);
-app.use('/api', apiRouter);
+// API: 30 requests per 5 seconds
+const apiLimiter = rateLimit({
+  windowMs: 5 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests, please try again later',
+});
+
+app.use('/auth', authLimiter, authRouter);
+app.use('/api', apiLimiter, apiRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

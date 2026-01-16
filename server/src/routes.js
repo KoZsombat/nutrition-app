@@ -232,15 +232,17 @@ router.post(
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('calories')
-      .isInt({ min: 0 })
-      .withMessage('Calories must be a positive integer'),
+      .isFloat({ min: 0 })
+      .withMessage('Calories must be a positive number'),
     body('protein')
-      .isInt({ min: 0 })
-      .withMessage('Protein must be a positive integer'),
+      .isFloat({ min: 0 })
+      .withMessage('Protein must be a positive number'),
     body('carbs')
-      .isInt({ min: 0 })
-      .withMessage('Carbs must be a positive integer'),
-    body('fat').isInt({ min: 0 }).withMessage('Fat must be a positive integer'),
+      .isFloat({ min: 0 })
+      .withMessage('Carbs must be a positive number'),
+    body('fat')
+      .isFloat({ min: 0 })
+      .withMessage('Fat must be a positive number'),
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -314,16 +316,56 @@ router.post(
 
     const user = req.username;
     const { id } = req.body;
-    const sql = `DELETE FROM food WHERE username = ? AND id = ?`;
-    con.query(sql, [user, id], (err) => {
-      if (err) {
-        console.error('Ingredient delete error');
+
+    const sql = `SELECT name FROM food WHERE username = ? AND id = ?`;
+    con.query(sql, [user, id], (err, result) => {
+      if (err || result.length === 0) {
+        console.error('Ingredient fetch error');
         return res.status(500).json({
-          error: 'Could not delete ingredient. Please try again later.',
+          error: 'Could not find ingredient. Please try again later.',
         });
       }
-      return res.json({ success: true });
+      const ingredientName = result[0].name;
+
+      const sql2 = `SELECT id FROM meal_food WHERE food = ?`;
+      con.query(sql2, [ingredientName], (err2, result2) => {
+        if (err2) {
+          console.error('Meal food fetch error');
+          return res.status(500).json({
+            error: 'Could not verify ingredient usage. Please try again later.',
+          });
+        }
+        const mealIds = result2.map((r) => r.id);
+        if (mealIds.length > 0) {
+          const sql3 = `DELETE FROM meal WHERE username = ? AND id IN (?)`;
+          con.query(sql3, [user, mealIds], (err3) => {
+            if (err3) {
+              console.error('Meal delete error');
+              return res.status(500).json({
+                error:
+                  'Could not delete associated meals. Please try again later.',
+              });
+            }
+            deleteIngredient();
+          });
+        } else {
+          deleteIngredient();
+        }
+      });
     });
+
+    function deleteIngredient() {
+      const sql4 = `DELETE FROM food WHERE username = ? AND id = ?`;
+      con.query(sql4, [user, id], (err) => {
+        if (err) {
+          console.error('Ingredient delete error');
+          return res.status(500).json({
+            error: 'Could not delete ingredient. Please try again later.',
+          });
+        }
+        return res.json({ success: true });
+      });
+    }
   }
 );
 
@@ -465,8 +507,8 @@ router.post(
   [
     body('meal').trim().notEmpty().withMessage('Meal name is required'),
     body('gram')
-      .isInt({ min: 0 })
-      .withMessage('Grams must be a positive integer'),
+      .isFloat({ min: 0 })
+      .withMessage('Grams must be a positive number'),
   ],
   (req, res) => {
     const errors = validationResult(req);
