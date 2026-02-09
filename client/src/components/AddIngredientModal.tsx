@@ -159,7 +159,37 @@ export default function AddIngredientModal({
           idx: number
         ) => ({ ...item, id: `${item.name}-${idx}` })
       );
-      allProducts = allProducts.concat(filteredWithId);
+
+      // Sort by relevance to search term
+      const sortedByRelevance = filteredWithId.sort((a: { name: string }, b: { name: string }) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const searchLower = search.toLowerCase();
+
+        // Exact match gets highest priority
+        if (aName === searchLower) return -1;
+        if (bName === searchLower) return 1;
+
+        // Starts with search term
+        const aStartsWith = aName.startsWith(searchLower);
+        const bStartsWith = bName.startsWith(searchLower);
+        if (aStartsWith && !bStartsWith) return -1;
+        if (!aStartsWith && bStartsWith) return 1;
+
+        // Contains search term (closer to start = higher priority)
+        const aIndex = aName.indexOf(searchLower);
+        const bIndex = bName.indexOf(searchLower);
+        if (aIndex !== -1 && bIndex !== -1) {
+          return aIndex - bIndex;
+        }
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+
+        // Default: alphabetical
+        return aName.localeCompare(bName);
+      });
+
+      allProducts = allProducts.concat(sortedByRelevance);
 
       // Ensure allProducts only contains objects with id field
       setDbAll(

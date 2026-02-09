@@ -15,7 +15,7 @@ export default function Index() {
   const [alertType, setAlertType] = useState<'success' | 'error'>('error');
 
   useEffect(() => {
-    const checkLoginStatus = async () => {
+    const checkLoginStatus = async () => { // check google/passowrd login validity
       try {
         // Token a query-ből (Google login után)
         const urlParams = new URLSearchParams(window.location.search);
