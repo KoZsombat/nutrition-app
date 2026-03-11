@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { IoCloseOutline } from 'react-icons/io5';
 import type { FoodEntry } from '../types/types';
 import Alert from './Alert';
+import { useTranslation } from 'react-i18next';
 
 export default function AddMealModal({
   visible,
@@ -20,6 +21,7 @@ export default function AddMealModal({
   initialMealName?: string;
   initialIngredients?: { name: string; grams: string }[];
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [localMealName, setLocalMealName] = useState(initialMealName);
@@ -41,12 +43,12 @@ export default function AddMealModal({
   if (!visible) return null;
 
   const validateMeal = (): string | null => {
-    if (localMealName.trim() === '') return 'Meal name is required.';
-    if (localSelectedIngredients.length === 0) return 'Add at least one ingredient to the meal.';
+    if (localMealName.trim() === '') return t('meal.errorNameRequired');
+    if (localSelectedIngredients.length === 0) return t('meal.errorIngredientRequired');
     const invalid = localSelectedIngredients.find((si) => !isValidPositiveNumber(si.grams));
-    if (invalid) return `Grams for '${invalid.name}' must be a positive number.`;
+    if (invalid) return t('meal.errorGramsPositive', { name: invalid.name });
     const tooLarge = localSelectedIngredients.find((si) => parseFloat(si.grams) > 100000);
-    if (tooLarge) return `Grams for '${tooLarge.name}' must be less than or equal to 100000.`;
+    if (tooLarge) return t('meal.errorGramsTooLarge', { name: tooLarge.name });
     return null;
   };
 
@@ -54,7 +56,7 @@ export default function AddMealModal({
     <div className="overflow-y-auto pb-[10vh] fixed pt-5 inset-0 bg-white z-20 overflow-hidden flex flex-col">
       <div className="flex flex-row justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-b border-gray-200 bg-white flex-shrink-0">
         <p className="text-3xl sm:text-4xl font-bold text-gray-900">
-          {editMode ? 'Edit' : 'Create'} Meal
+          {editMode ? t('meal.editTitle') : t('meal.createTitle')}
         </p>
         <button
           className="hover:bg-gray-100 rounded-lg p-2 transition-colors cursor-pointer"
@@ -67,7 +69,7 @@ export default function AddMealModal({
       <div className="overflow-y-auto flex-1 p-3 sm:p-6 max-w-2xl mx-auto w-full">
         {errorMsg && <Alert message={errorMsg} onClose={() => setErrorMsg(null)} />}
         <div className="mb-4 sm:mb-6">
-          <p className="block mb-2 text-sm font-medium text-gray-900">Meal name:</p>
+          <p className="block mb-2 text-sm font-medium text-gray-900">{t('meal.mealName')}</p>
           <input
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={localMealName}
@@ -75,7 +77,7 @@ export default function AddMealModal({
           />
         </div>
         <input
-          placeholder="Search for ingredients..."
+          placeholder={t('meal.searchIngredients')}
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 mb-4 sm:mb-6 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -95,7 +97,7 @@ export default function AddMealModal({
                   </span>
                   <input
                     type="numeric"
-                    placeholder="grams"
+                    placeholder={t('common.grams')}
                     className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg w-20 sm:w-24 p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={selected?.grams ?? ''}
                     onChange={(e) => {
@@ -127,13 +129,13 @@ export default function AddMealModal({
               onAdd(localMealName, localSelectedIngredients);
             }}
           >
-            {editMode ? 'Save Changes' : 'Create Meal'}
+            {editMode ? t('meal.saveChanges') : t('meal.createMeal')}
           </button>
           <button
             className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium bg-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
             onClick={onClose}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

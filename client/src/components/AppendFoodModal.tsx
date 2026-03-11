@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IoCloseOutline } from 'react-icons/io5';
 import type { CalEntry } from '../types/types';
 import Alert from './Alert';
+import { useTranslation } from 'react-i18next';
 
 export default function AppendFoodModal({
   visible,
@@ -22,6 +23,7 @@ export default function AppendFoodModal({
   setActiveItem: (v: string) => void;
   onAddEaten: (name: string) => void;
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<'success' | 'error'>('error');
@@ -34,16 +36,16 @@ export default function AppendFoodModal({
   };
 
   const validateAppend = (name: string): string | null => {
-    if (activeItem !== name) return 'Enter grams for this meal before adding.';
-    if (!isValidPositiveNumber(mealGrams)) return 'Grams must be a positive number.';
-    if (parseFloat(mealGrams) > 100000) return 'Grams must be less than or equal to 100000.';
+    if (activeItem !== name) return t('appendFood.errorEnterGrams');
+    if (!isValidPositiveNumber(mealGrams)) return t('appendFood.errorGramsPositive');
+    if (parseFloat(mealGrams) > 100000) return t('appendFood.errorGramsTooLarge');
     return null;
   };
 
   return (
     <div className="overflow-y-auto pb-[10vh] fixed pt-5 inset-0 bg-white z-20 overflow-hidden flex flex-col">
       <div className="flex flex-row justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-b border-gray-200 bg-white flex-shrink-0">
-        <p className="text-3xl sm:text-4xl font-bold text-gray-900">Add Meal</p>
+        <p className="text-3xl sm:text-4xl font-bold text-gray-900">{t('appendFood.title')}</p>
         <button
           className="hover:bg-gray-100 rounded-lg p-2 transition-colors cursor-pointer"
           onClick={onClose}
@@ -57,7 +59,7 @@ export default function AppendFoodModal({
           <Alert message={alertMsg} type={alertType} onClose={() => setAlertMsg(null)} />
         )}
         <input
-          placeholder="Search for meals..."
+          placeholder={t('appendFood.search')}
           className="bg-gray-200 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2 sm:p-2.5 mb-4 sm:mb-6 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -73,7 +75,7 @@ export default function AppendFoodModal({
                 <span className="flex-1 font-medium text-gray-700 text-sm">{f.name}</span>
                 <input
                   type="numeric"
-                  placeholder="grams"
+                  placeholder={t('common.grams')}
                   className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg w-16 sm:w-24 p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   defaultValue={0}
                   onFocus={() => setActiveItem(f.name)}
@@ -88,14 +90,14 @@ export default function AppendFoodModal({
                       setAlertType('error');
                       return;
                     }
-                    setAlertMsg('Meal added successfully!');
+                    setAlertMsg(t('appendFood.successAdded'));
                     setAlertType('success');
                     setMealGrams('');
                     setActiveItem('');
                     onAddEaten(f.name);
                   }}
                 >
-                  Add
+                  {t('common.add')}
                 </button>
               </div>
             ))}

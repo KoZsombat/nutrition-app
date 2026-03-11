@@ -15,6 +15,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const apiUrl = import.meta.env.VITE_API_URL;
   const [username, setUsername] = useState<string>('');
 
+  const handleUnauthorized = useCallback(() => {
+    localStorage.removeItem('token');
+    onLogout();
+  }, [onLogout]);
+
   const [visibleTabs, setVisibleTabs] = useState<{ [key: string]: boolean }>({
     appendFood: false,
     settingsTab: false,
@@ -72,9 +77,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     []
   );
 
-  const Start = async () => {
+  const Start = useCallback(async () => {
     try {
       const userData = localStorage.getItem('token');
+      if (!userData) {
+        return;
+      }
 
       const response = await fetch(`${apiUrl}/auth/verifyToken`, {
         method: 'POST',
@@ -82,14 +90,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${userData}`,
         },
-        body: JSON.stringify({
-          token: userData,
-        }),
       });
 
       if (response.status === 401) {
-        localStorage.removeItem('token');
-        onLogout();
+        handleUnauthorized();
         return;
       }
 
@@ -100,22 +104,20 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     } catch (error) {
       console.error('Failed to load user data:', error);
     }
-  };
+  }, [apiUrl, handleUnauthorized]);
 
   const Load = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/getData`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/data`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username }),
       });
       if (response.status === 401) {
-        localStorage.removeItem('token');
-        onLogout();
+        handleUnauthorized();
         return;
       }
       const data = await response.json();
@@ -128,7 +130,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     } catch (e) {
       console.error('Failed to fetch user data', e);
     }
-  }, [apiUrl, username, onLogout]);
+  }, [apiUrl, handleUnauthorized]);
 
   const Update = async (next: {
     email: string;
@@ -140,14 +142,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/updateData`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/data`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          user: username,
           email: next.email,
           calories: parseFloat(next.calorieMax),
           protein: parseFloat(next.proteinMax),
@@ -157,8 +158,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         }),
       });
       if (response.status === 401) {
-        localStorage.removeItem('token');
-        onLogout();
+        handleUnauthorized();
         return;
       }
       if (!response.ok) {
@@ -183,17 +183,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const LoadFood = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/getFood`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/food`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username }),
       });
       if (response.status === 401) {
-        localStorage.removeItem('token');
-        onLogout();
+        handleUnauthorized();
         return;
       }
       const data = await response.json();
@@ -202,17 +200,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setEaten(data.eaten);
 
       try {
-        const historyResponse = await fetch(`${apiUrl}/api/HistoryGet`, {
-          method: 'POST',
+        const historyResponse = await fetch(`${apiUrl}/api/history`, {
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ user: username }),
         });
         if (historyResponse.status === 401) {
-          localStorage.removeItem('token');
-          onLogout();
+          handleUnauthorized();
           return;
         }
         const historyData = await historyResponse.json();
@@ -223,7 +219,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     } catch (e) {
       console.error('Failed to fetch food data', e);
     }
-  }, [apiUrl, username, onLogout]);
+  }, [apiUrl, handleUnauthorized]);
 
   const AddIngredient = async (ingredient: {
     name: string;
@@ -243,14 +239,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     ) {
       try {
         const token = localStorage.getItem('token');
-        await fetch(`${apiUrl}/api/ingredientCreate`, {
+        const response = await fetch(`${apiUrl}/api/ingredient`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            user: username,
             name: ingredient.name,
             calories: parseFloat(ingredient.calories),
             protein: parseFloat(ingredient.protein),
@@ -258,6 +253,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
             fat: parseFloat(ingredient.fat),
           }),
         });
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
         setIngredientName('name');
         setIngredientCalories('0');
         setIngredientProtein('0');
@@ -299,14 +298,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     ) {
       try {
         const token = localStorage.getItem('token');
-        await fetch(`${apiUrl}/api/ingredientEdit`, {
-          method: 'POST',
+        const response = await fetch(`${apiUrl}/api/ingredient`, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            user: username,
             id,
             name: ingredient.name,
             calories: parseFloat(ingredient.calories),
@@ -315,6 +313,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
             fat: parseFloat(ingredient.fat),
           }),
         });
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
         setIngredientName('name');
         setIngredientCalories('0');
         setIngredientProtein('0');
@@ -330,14 +332,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const DeleteIngerdient = async (id: number) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${apiUrl}/api/ingredientDelete`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/ingredient`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username, id }),
+        body: JSON.stringify({ id }),
       });
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       LoadFood();
     } catch (e) {
       console.error('Failed to delete ingredient', e);
@@ -424,14 +430,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const AddMeal = async (mealName: string, foodList: string[]) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${apiUrl}/api/mealCreate`, {
+      const response = await fetch(`${apiUrl}/api/meal`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username, name: mealName, food: foodList }),
+        body: JSON.stringify({ name: mealName, food: foodList }),
       });
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       LoadFood();
     } catch (e) {
       console.error('Failed to add meal', e);
@@ -441,14 +451,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const EditMeal = async (id: number, newName: string, foodList: string[]) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${apiUrl}/api/mealEdit`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/meal`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username, id, name: newName, food: foodList }),
+        body: JSON.stringify({ id, name: newName, food: foodList }),
       });
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       LoadFood();
     } catch (e) {
       console.error('Failed to edit meal', e);
@@ -458,14 +472,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const DeleteMeal = async (id: number) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${apiUrl}/api/mealDelete`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/meal`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username, id }),
+        body: JSON.stringify({ id }),
       });
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       LoadFood();
     } catch (e) {
       console.error('Failed to delete meal', e);
@@ -476,14 +494,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       if (mealGrams === '0' || mealName === '') return;
       const token = localStorage.getItem('token');
-      await fetch(`${apiUrl}/api/eatenAdd`, {
+      const response = await fetch(`${apiUrl}/api/eaten`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username, meal: mealName, gram: mealGrams }),
+        body: JSON.stringify({ meal: mealName, gram: mealGrams }),
       });
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       setMealGrams('100');
       LoadFood();
       toggleTab('appendFood')();
@@ -495,14 +517,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const handleDeleteEaten = async (name: string) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${apiUrl}/api/deleteEaten`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/api/eaten`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username, meal: name }),
+        body: JSON.stringify({ meal: name }),
       });
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       LoadFood();
     } catch (e) {
       console.error('Failed to delete eaten meal', e);
@@ -512,22 +538,24 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const Clear = async () => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${apiUrl}/api/clearEaten`, {
-        method: 'POST',
+      const clearResponse = await fetch(`${apiUrl}/api/eaten/all`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user: username }),
       });
-      await fetch(`${apiUrl}/api/HistoryAdd`, {
+      if (clearResponse.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+      const historyResponse = await fetch(`${apiUrl}/api/history`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          user: username,
           calories,
           protein,
           carbs,
@@ -535,6 +563,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
           date: new Date().toISOString(),
         }),
       });
+      if (historyResponse.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       LoadFood();
       setCalories(0);
       setProtein(0);
@@ -661,6 +693,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         editMode={editMode}
         apiUrl={apiUrl}
         token={localStorage.getItem('token') || ''}
+        onLogout={onLogout}
       />
       <AddMealModal
         visible={visibleTabs['addMeal']}
@@ -675,10 +708,6 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         visible={visibleTabs['historyTab']}
         onClose={toggleTab('historyTab')}
         eatenData={eatenHistory}
-        calorieMax={calorieMax}
-        proteinMax={proteinMax}
-        carbsMax={carbsMax}
-        fatMax={fatMax}
       />
       <Navbar
         onHistory={openExclusiveTab('historyTab')}

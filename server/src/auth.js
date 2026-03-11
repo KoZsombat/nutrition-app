@@ -8,14 +8,21 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import con from './db.js';
+import { verifyToken } from './middleware/verifyToken.js';
 dotenv.config();
 
 const router = express.Router();
 
 const loginLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 5,
+  windowMs: 30 * 1000, // 30 seconds
+  max: 5, // 5 login attempts
   message: 'Too many login attempts, please try again later',
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // 10 registration attempts
+  message: 'Too many registration attempts, please try again later',
 });
 
 router.use(
@@ -142,6 +149,7 @@ const generateToken = (user) => {
 
 router.post(
   '/register',
+  registerLimiter,
   [
     body('name')
       .isLength({ min: 3 })
@@ -245,53 +253,14 @@ router.post('/login', loginLimiter, async (req, res) => {
   });
 });
 
-const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.id = decoded.userId;
-    req.username = decoded.username;
-    next();
-  } catch (error) {
-    return res
-      .status(401)
-      .json({ error: 'Invalid token', details: error.message });
-  }
-};
-
 router.post('/verifyToken', verifyToken, (req, res) => {
   res.json({ userId: req.id, username: req.username });
 });
 
-router.post('/userInDb', async (req, res) => {
-  const { token } = req.body;
-
-  if (!token) {
-    return res.status(400).json({ exists: false, message: 'No username' });
-  }
-
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const username = decoded.username;
-
-  const sql = `SELECT * FROM user WHERE username = ?`;
-  con.query(sql, [username], (err, result) => {
-    if (err) {
-      console.error('User existence query error:', err);
-      return res.status(500).json({ exists: false, message: 'Server error' });
-    }
-
-    if (result.length > 0) {
-      return res.json({ exists: true });
-    } else {
-      return res.json({ exists: false });
-    }
-  });
+router.post('/userInDb', verifyToken, (req, res) => {
+  // User already verified by verifyToken middleware
+  // If we reach here, user exists and token is valid
+  return res.json({ exists: true });
 });
 
-export { verifyToken };
 export default router;

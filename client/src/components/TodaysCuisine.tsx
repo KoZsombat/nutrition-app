@@ -1,6 +1,7 @@
 import { IoAddCircleOutline } from 'react-icons/io5';
 import { MdSaveAs } from 'react-icons/md';
 import type { CalEntry, FoodEntry, EatenEntry } from '../types/types';
+import { useTranslation } from 'react-i18next';
 
 export default function TodaysCuisine({
   eaten,
@@ -17,10 +18,12 @@ export default function TodaysCuisine({
   onOpenAppend: () => void;
   onDeleteEaten: (name: string) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-white mx-3 my-2 sm:m-5 p-2 shadow-sm rounded-xl min-h-[30vh] max-h-[45vh] flex flex-col">
       <div className="flex flex-row justify-between items-center">
-        <p className="text-lg sm:text-2xl relative m-2">Today's Cousine</p>
+        <p className="text-lg sm:text-2xl relative m-2">{t('todaysCuisine.title')}</p>
         <div className="flex flex-row justify-between gap-2 sm:gap-3 mr-2 sm:mr-3">
           <button
             className="bg-[#f2f2f2ff] rounded-lg p-1.5 sm:p-2 hover:bg-gray-300 transition-colors cursor-pointer"
@@ -40,7 +43,7 @@ export default function TodaysCuisine({
         {eaten.length === 0 ? (
           <div className="flex relative justify-center items-center h-full">
             <p className="text-base absolute top-[12.5vh] text-center font-bold">
-              Nothing here yet
+              {t('todaysCuisine.empty')}
             </p>
           </div>
         ) : (
@@ -69,9 +72,10 @@ export default function TodaysCuisine({
                 <div className="flex-1">
                   <p className="text-sm sm:text-md font-bold uppercase">{meal.name}</p>
                   <p className="text-xs sm:text-sm">
-                    Calories: {parseFloat(allCals.toFixed(2))}, Protein:{' '}
-                    {parseFloat(allProtein.toFixed(2))}, Carbs: {parseFloat(allCarbs.toFixed(2))},
-                    Fat: {parseFloat(allFat.toFixed(2))}
+                    {t('stats.calories')}: {parseFloat(allCals.toFixed(2))}, {t('stats.protein')}:{' '}
+                    {parseFloat(allProtein.toFixed(2))}, {t('stats.carbs')}:{' '}
+                    {parseFloat(allCarbs.toFixed(2))},{t('stats.fat')}:{' '}
+                    {parseFloat(allFat.toFixed(2))}
                   </p>
                 </div>
                 <button
@@ -80,7 +84,7 @@ export default function TodaysCuisine({
                   }
                   onClick={() => onDeleteEaten(meal.name)}
                 >
-                  Delete
+                  {t('common.delete')}
                 </button>
               </div>
             );

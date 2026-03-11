@@ -1,10 +1,10 @@
 import { IoCloseOutline } from 'react-icons/io5';
 import { HiCamera } from 'react-icons/hi';
-import { FaClipboardList } from 'react-icons/fa';
 import Alert from './Alert';
 import { useEffect, useState } from 'react';
 import Select from 'react-select';
 import BarcodeNumberScanner from './BarcodeNumberScanner';
+import { useTranslation } from 'react-i18next';
 
 export default function AddIngredientModal({
   visible,
@@ -19,6 +19,7 @@ export default function AddIngredientModal({
   editMode,
   apiUrl,
   token,
+  onLogout,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -38,7 +39,9 @@ export default function AddIngredientModal({
   editMode: boolean;
   apiUrl: string;
   token: string;
+  onLogout: () => void;
 }) {
+  const { t } = useTranslation();
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<'success' | 'error'>('error');
   const [localName, setLocalName] = useState(name);
@@ -63,7 +66,7 @@ export default function AddIngredientModal({
     null
   );
   const [isBarcode, setIsBarcode] = useState<boolean>(false);
-  const [isNutTable, setIsNutTable] = useState<boolean>(false);
+  const [isNutTable] = useState<boolean>(false);
 
   const isMobile = () => {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -71,11 +74,16 @@ export default function AddIngredientModal({
 
   const fetchBarcodeProduct = async (barcode: string) => {
     try {
-      const response = await fetch(`${apiUrl}/api/ProductBarcodeSearch`, {
+      const response = await fetch(`${apiUrl}/api/product/barcode`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ query: barcode }),
       });
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        onLogout();
+        return;
+      }
       const json = await response.json();
       if (json.products && json.products.length > 0) {
         const product = json.products[0];
@@ -84,14 +92,14 @@ export default function AddIngredientModal({
         setLocalProtein(product.protein?.toString() ?? '0');
         setLocalCarbs(product.carbs?.toString() ?? '0');
         setLocalFat(product.fat?.toString() ?? '0');
-        setAlertMsg('Product found from barcode!');
+        setAlertMsg(t('ingredient.successBarcode'));
         setAlertType('success');
       } else {
-        setAlertMsg('Product not found in database');
+        setAlertMsg(t('ingredient.errorBarcodeNotFound'));
         setAlertType('error');
       }
     } catch (error) {
-      setAlertMsg('Failed to fetch product data from barcode.');
+      setAlertMsg(t('ingredient.errorBarcodeFetch'));
       setAlertType('error');
       console.error(error);
     }
@@ -115,11 +123,16 @@ export default function AddIngredientModal({
     }[] = [];
 
     try {
-      const response = await fetch(`${apiUrl}/api/ProductSearch`, {
+      const response = await fetch(`${apiUrl}/api/product/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ query: search }),
       });
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        onLogout();
+        return;
+      }
       const json = await response.json();
 
       let filtered = json.products.map(
@@ -228,15 +241,15 @@ export default function AddIngredientModal({
   if (!visible) return null;
 
   const validateIngredient = (): string | null => {
-    if (localName.trim() === '') return 'Ingredient name is required.';
-    if (!isValidPositiveNumber(localCalories)) return 'Calories must be a positive number.';
-    if (parseFloat(localCalories) > 100000) return 'Calories must be less than or equal to 100000.';
-    if (!isValidPositiveNumber(localProtein)) return 'Protein must be a positive number.';
-    if (parseFloat(localProtein) > 100000) return 'Protein must be less than or equal to 100000.';
-    if (!isValidPositiveNumber(localCarbs)) return 'Carbs must be a positive number.';
-    if (parseFloat(localCarbs) > 100000) return 'Carbs must be less than or equal to 100000.';
-    if (!isValidPositiveNumber(localFat)) return 'Fat must be a positive number.';
-    if (parseFloat(localFat) > 100000) return 'Fat must be less than or equal to 100000.';
+    if (localName.trim() === '') return t('ingredient.errorNameRequired');
+    if (!isValidPositiveNumber(localCalories)) return t('ingredient.errorCaloriesPositive');
+    if (parseFloat(localCalories) > 100000) return t('ingredient.errorCaloriesTooLarge');
+    if (!isValidPositiveNumber(localProtein)) return t('ingredient.errorProteinPositive');
+    if (parseFloat(localProtein) > 100000) return t('ingredient.errorProteinTooLarge');
+    if (!isValidPositiveNumber(localCarbs)) return t('ingredient.errorCarbsPositive');
+    if (parseFloat(localCarbs) > 100000) return t('ingredient.errorCarbsTooLarge');
+    if (!isValidPositiveNumber(localFat)) return t('ingredient.errorFatPositive');
+    if (parseFloat(localFat) > 100000) return t('ingredient.errorFatTooLarge');
     return null;
   };
 
@@ -267,7 +280,7 @@ export default function AddIngredientModal({
       {isNutTable && <h1>asd</h1>}
       <div className="flex flex-row justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-b border-gray-200 bg-white flex-shrink-0">
         <p className="text-3xl sm:text-4xl font-bold text-gray-900">
-          {editMode ? 'Edit' : 'Add'} Ingredient
+          {editMode ? t('ingredient.editTitle') : t('ingredient.addTitle')}
         </p>
         <button
           className="hover:bg-gray-100 rounded-lg p-2 transition-colors cursor-pointer"
@@ -287,7 +300,7 @@ export default function AddIngredientModal({
                 : 'text-gray-500 border-transparent hover:text-gray-700 bg-transparent'
             }`}
           >
-            Create Own Ingredient
+            {t('ingredient.createOwn')}
           </button>
           <button
             onClick={() => setViewMode('database')}
@@ -297,7 +310,7 @@ export default function AddIngredientModal({
                 : 'text-gray-500 border-transparent hover:text-gray-700 bg-transparent'
             }`}
           >
-            Select from Database
+            {t('ingredient.selectFromDatabase')}
           </button>
         </div>
         {alertMsg && (
@@ -311,14 +324,14 @@ export default function AddIngredientModal({
                   className="block w-full text-sm md:text-xs font-medium text-gray-900 mb-1"
                   htmlFor="ingredient-search"
                 >
-                  Search for an ingredient in the public food database:
+                  {t('ingredient.searchLabel')}
                 </label>
                 <div className="flex w-full gap-2 items-center mb-2">
                   <input
                     id="ingredient-search"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm md:text-xs rounded-lg block w-full p-1.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     type="text"
-                    placeholder="e.g. chicken breast, apple, rice..."
+                    placeholder={t('ingredient.searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
@@ -336,7 +349,7 @@ export default function AddIngredientModal({
                   className="block w-full text-sm md:text-xs font-medium text-gray-900 mb-1"
                   htmlFor="ingredient-select"
                 >
-                  Select a product to autofill the fields:
+                  {t('ingredient.selectLabel')}
                 </label>
                 <Select
                   inputId="ingredient-select"
@@ -346,12 +359,12 @@ export default function AddIngredientModal({
                   isLoading={loading}
                   placeholder={
                     searchTerm.length < 3
-                      ? 'Type at least 3 characters to search'
+                      ? t('ingredient.placeholderMinChars')
                       : loading
-                        ? 'Loading...'
+                        ? t('ingredient.placeholderLoading')
                         : dbAll.length === 0
-                          ? 'No results found'
-                          : 'Select a product...'
+                          ? t('ingredient.placeholderNoResults')
+                          : t('ingredient.placeholderSelect')
                   }
                   options={dbAll.map((item) => ({
                     value: item.id,
@@ -411,7 +424,9 @@ export default function AddIngredientModal({
                   <span className="mb-0.5 flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 group-hover:bg-gray-300 transition-all">
                     <HiCamera size={18} color="#111" />
                   </span>
-                  <span className="text-[10px] font-semibold text-gray-900">Scan Barcode</span>
+                  <span className="text-[10px] font-semibold text-gray-900">
+                    {t('ingredient.scanBarcode')}
+                  </span>
                 </button>
                 {/* <button
                   className="flex flex-col items-center justify-center px-2 py-2 rounded-lg shadow bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all border border-gray-300 focus:outline-none group"
@@ -428,7 +443,9 @@ export default function AddIngredientModal({
               </div>
             ) : null}
             <div>
-              <p className={`block mb-2 text-sm font-medium text-gray-900`}>Name:</p>
+              <p className={`block mb-2 text-sm font-medium text-gray-900`}>
+                {t('ingredient.name')}
+              </p>
               <input
                 className={
                   `bg-gray-50 border border-gray-300 text-gray-900 rounded-lg block w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent ` +
@@ -439,7 +456,9 @@ export default function AddIngredientModal({
               />
             </div>
             <div>
-              <p className={`block mb-2 text-sm font-medium text-gray-900`}>Calories in 100g:</p>
+              <p className={`block mb-2 text-sm font-medium text-gray-900`}>
+                {t('ingredient.calories')}
+              </p>
               <input
                 className={
                   `bg-gray-50 border border-gray-300 text-gray-900 rounded-lg block w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent ` +
@@ -450,7 +469,9 @@ export default function AddIngredientModal({
               />
             </div>
             <div>
-              <p className={`block mb-2 text-sm font-medium text-gray-900`}>Protein in 100g:</p>
+              <p className={`block mb-2 text-sm font-medium text-gray-900`}>
+                {t('ingredient.protein')}
+              </p>
               <input
                 className={
                   `bg-gray-50 border border-gray-300 text-gray-900 rounded-lg block w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent ` +
@@ -461,7 +482,9 @@ export default function AddIngredientModal({
               />
             </div>
             <div>
-              <p className={`block mb-2 text-sm font-medium text-gray-900`}>Carbs in 100g:</p>
+              <p className={`block mb-2 text-sm font-medium text-gray-900`}>
+                {t('ingredient.carbs')}
+              </p>
               <input
                 className={
                   `bg-gray-50 border border-gray-300 text-gray-900 rounded-lg block w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent ` +
@@ -472,7 +495,9 @@ export default function AddIngredientModal({
               />
             </div>
             <div>
-              <p className={`block mb-2 text-sm font-medium text-gray-900`}>Fat in 100g:</p>
+              <p className={`block mb-2 text-sm font-medium text-gray-900`}>
+                {t('ingredient.fat')}
+              </p>
               <input
                 className={
                   `bg-gray-50 border border-gray-300 text-gray-900 rounded-lg block w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent ` +
@@ -499,9 +524,7 @@ export default function AddIngredientModal({
                 setAlertType('error');
                 return;
               }
-              setAlertMsg(
-                editMode ? 'Ingredient updated successfully!' : 'Ingredient added successfully!'
-              );
+              setAlertMsg(editMode ? t('ingredient.successUpdate') : t('ingredient.successAdd'));
               setAlertType('success');
               setTimeout(() => setAlertMsg(null), 1500);
               onAdd({
@@ -513,7 +536,7 @@ export default function AddIngredientModal({
               });
             }}
           >
-            {editMode ? 'Save Changes' : 'Add Ingredient'}
+            {editMode ? t('ingredient.saveChanges') : t('ingredient.addIngredient')}
           </button>
           <button
             className={
@@ -524,7 +547,7 @@ export default function AddIngredientModal({
             }
             onClick={onClose}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IoCloseOutline } from 'react-icons/io5';
 import type { CalEntry, FoodEntry } from '../types/types';
+import { useTranslation } from 'react-i18next';
 
 export default function AddFoodModal({
   visible,
@@ -25,6 +26,7 @@ export default function AddFoodModal({
   onEditMeal: (meal: CalEntry) => void;
   onDeleteMeal: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const [list, setList] = useState(false);
 
   if (!visible) return null;
@@ -32,7 +34,7 @@ export default function AddFoodModal({
   return (
     <div className="overflow-y-auto pb-[10vh] fixed pt-5 inset-0 bg-white z-20 overflow-hidden flex flex-col">
       <div className="flex flex-row justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-b border-gray-200 bg-white flex-shrink-0">
-        <p className="text-3xl sm:text-4xl font-bold text-gray-900">Add Food</p>
+        <p className="text-3xl sm:text-4xl font-bold text-gray-900">{t('manageFood.title')}</p>
         <button
           className="hover:bg-gray-100 rounded-lg p-2 transition-colors cursor-pointer"
           onClick={onClose}
@@ -48,13 +50,13 @@ export default function AddFoodModal({
             className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-[#5a5a5cff] text-white font-medium text-sm sm:text-base hover:bg-[#6a6a6cff] transition-all active:scale-95 shadow-md"
             onClick={onOpenIngredient}
           >
-            + Add Ingredient
+            {t('manageFood.addIngredient')}
           </button>
           <button
             className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-[#3a3a3cff] text-white font-medium text-sm sm:text-base hover:bg-[#4a4a4cff] transition-all active:scale-95 shadow-md"
             onClick={onOpenMeal}
           >
-            + Create Meal
+            {t('manageFood.createMeal')}
           </button>
         </div>
 
@@ -67,7 +69,7 @@ export default function AddFoodModal({
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
-            Ingredients
+            {t('manageFood.ingredients')}
           </button>
           <button
             onClick={() => setList(true)}
@@ -77,7 +79,7 @@ export default function AddFoodModal({
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
-            Meals
+            {t('manageFood.meals')}
           </button>
         </div>
 
@@ -85,7 +87,9 @@ export default function AddFoodModal({
           {!list ? (
             <>
               {food.length === 0 ? (
-                <p className="text-center text-gray-400 py-8 col-span-full">No ingredients yet</p>
+                <p className="text-center text-gray-400 py-8 col-span-full">
+                  {t('manageFood.noIngredients')}
+                </p>
               ) : (
                 food.map((f) => (
                   <div
@@ -98,13 +102,13 @@ export default function AddFoodModal({
                         className="flex-1 px-3 py-2 rounded-lg bg-[#3a3a3cff] text-white text-xs font-medium hover:bg-[#4a4a4cff] transition-colors"
                         onClick={() => onEditIngredient(f.id)}
                       >
-                        Edit
+                        {t('common.edit')}
                       </button>
                       <button
                         className="flex-1 px-3 py-2 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors"
                         onClick={() => onDeleteIngredient(f.id)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   </div>
@@ -114,7 +118,9 @@ export default function AddFoodModal({
           ) : (
             <>
               {cals.length === 0 ? (
-                <p className="text-center text-gray-400 py-8 col-span-full">No meals yet</p>
+                <p className="text-center text-gray-400 py-8 col-span-full">
+                  {t('manageFood.noMeals')}
+                </p>
               ) : (
                 cals.map((f) => (
                   <div
@@ -127,13 +133,13 @@ export default function AddFoodModal({
                         className="flex-1 px-3 py-2 rounded-lg bg-[#3a3a3cff] text-white text-xs font-medium hover:bg-[#4a4a4cff] transition-colors"
                         onClick={() => onEditMeal(f)}
                       >
-                        Edit
+                        {t('common.edit')}
                       </button>
                       <button
                         className="flex-1 px-3 py-2 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors"
                         onClick={() => onDeleteMeal(f.id)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   </div>

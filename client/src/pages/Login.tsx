@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import Alert from '../components/Alert';
 import MainApp from './App';
+import { useTranslation } from 'react-i18next';
 
 export default function Index() {
+  const { t } = useTranslation();
   const apiUrl = import.meta.env.VITE_API_URL;
   const [logged, setlogged] = useState(false);
   const [showLogin, setShowLogin] = useState(true);
@@ -15,7 +17,8 @@ export default function Index() {
   const [alertType, setAlertType] = useState<'success' | 'error'>('error');
 
   useEffect(() => {
-    const checkLoginStatus = async () => { // check google/passowrd login validity
+    const checkLoginStatus = async () => {
+      // check google/passowrd login validity
       try {
         // Token a query-ből (Google login után)
         const urlParams = new URLSearchParams(window.location.search);
@@ -39,21 +42,26 @@ export default function Index() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${userData}`,
           },
-          body: JSON.stringify({ token: userData }),
         });
         if (!res.ok) {
+          localStorage.removeItem('token');
           setlogged(false);
           return;
         }
         const data = await res.json();
         if (data.exists) setlogged(true);
-        else setlogged(false);
+        else {
+          localStorage.removeItem('token');
+          setlogged(false);
+        }
       } catch (e) {
         console.error('Failed to fetch user data', e);
+        localStorage.removeItem('token');
+        setlogged(false);
       }
     };
     checkLoginStatus();
-  }, []);
+  }, [apiUrl]);
 
   const handleLogin = async () => {
     if (loginName && loginPass) {
@@ -74,18 +82,18 @@ export default function Index() {
           localStorage.setItem('token', data.token);
           setlogged(true);
           setShowLogin(false);
-          setAlertMsg('Login successful!');
+          setAlertMsg(t('login.successLogin'));
           setAlertType('success');
         } else {
-          setAlertMsg('Invalid username or password');
+          setAlertMsg(t('login.errorInvalidCredentials'));
           setAlertType('error');
         }
       } catch {
-        setAlertMsg('Server error. Please try again later.');
+        setAlertMsg(t('login.errorServer'));
         setAlertType('error');
       }
     } else {
-      setAlertMsg('Please enter valid credentials');
+      setAlertMsg(t('login.errorEnterCredentials'));
       setAlertType('error');
     }
   };
@@ -98,7 +106,7 @@ export default function Index() {
   const handleRegister = async () => {
     if (registerName && registerEmail && registerPass.length >= 8) {
       if (!validateEmail(registerEmail)) {
-        setAlertMsg('Please enter a valid email address');
+        setAlertMsg(t('login.errorEmailInvalid'));
         setAlertType('error');
         return;
       }
@@ -124,13 +132,13 @@ export default function Index() {
       }
 
       if (!data) {
-        setAlertMsg('Unexpected server response');
+        setAlertMsg(t('login.errorUnexpectedResponse'));
         setAlertType('error');
         return;
       }
 
       if (data.response === 0) {
-        setAlertMsg('User already exists');
+        setAlertMsg(t('login.errorUserExists'));
         setAlertType('error');
         return;
       } else if (data.response === 1) {
@@ -139,15 +147,15 @@ export default function Index() {
         setRegisterName('');
         setRegisterEmail('');
         setRegisterPass('');
-        setAlertMsg('Registration successful!');
+        setAlertMsg(t('login.successRegister'));
         setAlertType('success');
       } else {
-        setAlertMsg('Registration failed');
+        setAlertMsg(t('login.errorRegisterFailed'));
         setAlertType('error');
         return;
       }
     } else {
-      setAlertMsg('Please fill in all fields (password must be at least 8 characters)');
+      setAlertMsg(t('login.errorFillFields'));
       setAlertType('error');
     }
   };
@@ -163,9 +171,9 @@ export default function Index() {
       setRegisterName('');
       setRegisterEmail('');
       setRegisterPass('');
-      setAlertMsg('Logged out successfully');
+      setAlertMsg(t('login.successLogout'));
       setAlertType('success');
-      document.location.href = `${process.env.VITE_API_URL}/auth/logout`;
+      document.location.href = `${import.meta.env.VITE_API_URL}/auth/logout`;
     } catch (e) {
       console.error('Failed to remove user data', e);
     }
@@ -191,31 +199,31 @@ export default function Index() {
                   className={`rounded-lg px-3 sm:px-6 py-1.5 sm:py-2 font-medium transition-all cursor-pointer text-sm sm:text-base ${showLogin ? 'bg-[#3a3a3cff] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   onClick={() => setShowLogin(true)}
                 >
-                  Login
+                  {t('login.loginTab')}
                 </button>
                 <button
                   className={`rounded-lg px-3 sm:px-6 py-1.5 sm:py-2 font-medium transition-all cursor-pointer text-sm sm:text-base ${!showLogin ? 'bg-[#3a3a3cff] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   onClick={() => setShowLogin(false)}
                 >
-                  Register
+                  {t('login.registerTab')}
                 </button>
               </div>
 
               {showLogin ? (
                 <div className="space-y-2 sm:space-y-3">
                   <p className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4 text-center">
-                    Login
+                    {t('login.loginTitle')}
                   </p>
                   <input
                     className="bg-gray-50 rounded-lg w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Username"
+                    placeholder={t('login.username')}
                     value={loginName}
                     onChange={(e) => setLoginName(e.target.value)}
                     autoCapitalize="none"
                   />
                   <input
                     className="bg-gray-50 rounded-lg w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Password"
+                    placeholder={t('login.password')}
                     type="password"
                     value={loginPass}
                     onChange={(e) => setLoginPass(e.target.value)}
@@ -224,7 +232,7 @@ export default function Index() {
                     className="bg-[#3a3a3cff] mt-2 sm:mt-4 mb-[-0.5rem] w-full p-2 sm:p-3 rounded-lg text-white font-medium text-sm sm:text-base hover:bg-[#4a4a4cff] transition-all active:scale-95 cursor-pointer"
                     onClick={handleLogin}
                   >
-                    Login
+                    {t('login.loginButton')}
                   </button>
                   <button
                     className="bg-red-500 mt-2 sm:mt-4 w-full p-2 sm:p-3 rounded-lg text-white font-medium text-sm sm:text-base hover:bg-red-600 transition-all cursor-pointer"
@@ -232,31 +240,31 @@ export default function Index() {
                       (window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`)
                     }
                   >
-                    Login with Google
+                    {t('login.googleLogin')}
                   </button>
                 </div>
               ) : (
                 <div className="space-y-2 sm:space-y-3">
                   <p className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4 text-center">
-                    Register
+                    {t('login.registerTitle')}
                   </p>
                   <input
                     className="bg-gray-50 rounded-lg w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Username"
+                    placeholder={t('login.username')}
                     value={registerName}
                     onChange={(e) => setRegisterName(e.target.value)}
                     autoCapitalize="none"
                   />
                   <input
                     className="bg-gray-50 rounded-lg w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Email"
+                    placeholder={t('login.email')}
                     value={registerEmail}
                     onChange={(e) => setRegisterEmail(e.target.value)}
                     autoCapitalize="none"
                   />
                   <input
                     className="bg-gray-50 rounded-lg w-full p-2 sm:p-3 text-sm sm:text-base border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Password"
+                    placeholder={t('login.password')}
                     type="password"
                     value={registerPass}
                     onChange={(e) => setRegisterPass(e.target.value)}
@@ -265,7 +273,7 @@ export default function Index() {
                     className="bg-[#3a3a3cff] mt-2 sm:mt-4 mb-[-0.5rem] w-full p-2 sm:p-3 rounded-lg text-white font-medium text-sm sm:text-base hover:bg-[#4a4a4cff] transition-all active:scale-95 cursor-pointer"
                     onClick={handleRegister}
                   >
-                    Register
+                    {t('login.registerButton')}
                   </button>
                   <button
                     className="bg-red-500 mt-2 sm:mt-4 w-full p-2 sm:p-3 rounded-lg text-white font-medium text-sm sm:text-base hover:bg-red-600 transition-all cursor-pointer"
@@ -273,7 +281,7 @@ export default function Index() {
                       (window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`)
                     }
                   >
-                    Login with Google
+                    {t('login.googleLogin')}
                   </button>
                 </div>
               )}
