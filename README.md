@@ -1,208 +1,281 @@
 # Nutrition App
 
-Full-stack nutrition tracking app with barcode scanning and macro management.
+[![Frontend](https://img.shields.io/badge/frontend-React%2019%20%2B%20TypeScript-61dafb?style=flat-square)](client)
+[![Backend](https://img.shields.io/badge/backend-Express%205%20%2B%20MySQL-3c873a?style=flat-square)](server)
+[![Build](https://img.shields.io/badge/build-Vite%207-646cff?style=flat-square)](client)
 
-## Features
+Full-stack nutrition tracking app for logging meals, managing macro targets, and adding foods manually or from a barcode-backed product lookup.
 
-- 🍎 Track daily calorie, protein, carb, and fat intake
-- 📸 Barcode scanner (Scanbot SDK) for quick food input
-- 📊 Progress bars, daily history with streak tracking, and meal management
-- 🔐 JWT-based authentication (username/password + Google OAuth)
-- 🌐 i18n (internationalization) support
-- 📱 Progressive Web App (PWA) with offline support
+## At a Glance
+
+| Area          | Details                                                            |
+| ------------- | ------------------------------------------------------------------ |
+| Frontend      | React 19, TypeScript, Vite, Tailwind CSS 4                         |
+| Backend       | Express 5, MySQL 8, JWT auth                                       |
+| Input methods | Manual ingredients, saved meals, barcode product lookup            |
+| User features | Macro targets, daily log, history snapshots, optional Google OAuth |
+| Delivery      | SPA frontend with PWA support                                      |
+
+## Highlights
+
+- Daily calorie, protein, carb, and fat tracking
+- Custom ingredients and reusable meals
+- Logged meals for the current day with history snapshots
+- Barcode-based product lookup with Scanbot Web SDK
+- JWT authentication with optional Google OAuth login
+- Internationalization via i18next
+- PWA-enabled frontend build via Vite
 
 ## Tech Stack
 
-**Frontend (client):**
+| Frontend                   | Backend                          |
+| -------------------------- | -------------------------------- |
+| React 19                   | Express 5                        |
+| TypeScript 5               | MySQL 8 via mysql2               |
+| Vite 7                     | JWT + bcrypt                     |
+| Tailwind CSS 4             | Passport Google OAuth 2.0        |
+| react-i18next              | Helmet, CORS, express-rate-limit |
+| react-select               | express-validator                |
+| react-circular-progressbar |                                  |
+| Scanbot Web SDK            |                                  |
+| vite-plugin-pwa            |                                  |
 
-- React 19 + TypeScript
-- Vite 7
-- TailwindCSS 4
-- i18next (for translations)
-- Scanbot Web SDK (barcode scanning)
-- react-select, react-circular-progressbar
-
-**Backend (server):**
-
-- Express.js 5
-- MySQL 8 (via mysql2 connection pool)
-- JWT (jsonwebtoken) + bcrypt
-- Passport.js (Google OAuth 2.0)
-- Helmet, CORS, express-rate-limit, express-validator
-
-## Getting Started
-
-### Prerequisites
+## Requirements
 
 - Node.js 20.19+ or 22.12+
-- MySQL 8.0+ server running
-- (Optional) Google OAuth 2.0 credentials for SSO
+- npm
+- MySQL 8+
+- Optional: Google OAuth credentials
 
-### Installation
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone <repo-url>
-   cd nutrition-app
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   # Client
-   cd client && npm install
-
-   # Server
-   cd ../server && npm install
-   ```
-
-3. **Set up the database**:
-
-   ```bash
-   mysql -u root -p < database/schema.sql
-   ```
-
-4. **Configure environment variables**:
-
-   ```bash
-   # Backend
-   cp server/.env.example server/.env
-
-   # Frontend
-   cp client/.env.example client/.env
-   ```
-
-   Fill in `server/.env` with your MySQL credentials, JWT secret, Session secret, and Google OAuth keys.  
-   Set `VITE_API_URL` in `client/.env` to your backend origin (default: `http://localhost:3001`).
-
-5. **Run the app**:
-
-   ```bash
-   # Start backend (terminal 1)
-   cd server && npm start
-
-   # Start frontend (terminal 2)
-   cd client && npm run dev
-   ```
-
-   Visit [http://localhost:5173](http://localhost:5173).
-
-### Build for Production
+## Quick Start
 
 ```bash
-cd client && npm run build  # output: client/dist/
+git clone <repo-url>
+cd nutrition-app
+
+cd client
+npm install
+cd ../server
+npm install
+
+cd ..
+mysql -u root -p < database/schema.sql
 ```
 
----
+Create your environment files, start the backend and frontend, then open `http://localhost:5173`.
 
-## Project Structure
+## Setup
 
-```
-nutrition-app/
-├── client/                 # React + TypeScript frontend
-│   ├── src/
-│   │   ├── components/     # UI components (modals, bars, etc.)
-│   │   ├── pages/          # App.tsx (main), Login.tsx
-│   │   ├── context/        # ToastContext
-│   │   ├── types/          # Shared TypeScript types
-│   │   ├── utils/          # API helpers
-│   │   └── i18n/           # Translation files (en.json, …)
-│   └── public/
-│       └── wasm/           # Scanbot SDK WASM binaries
-├── server/                 # Express backend
-│   ├── src/
-│   │   ├── auth.js         # Auth routes + Passport + verifyToken middleware
-│   │   ├── routes.js       # Protected API routes (/api/*)
-│   │   ├── db.js           # MySQL connection pool
-│   │   └── config.js       # (reserved)
-│   ├── app.js              # Express app entry point
-│   ├── .env.example        # Backend environment template
-│   └── package.json
-├── database/
-│   └── schema.sql          # Full MySQL schema
-└── README.md
+### 1. Clone the repository
+
+```bash
+git clone <repo-url>
+cd nutrition-app
 ```
 
----
+### 2. Install dependencies
 
-## API Reference
+```bash
+cd client
+npm install
+cd ../server
+npm install
+```
 
-All `/api/*` routes require `Authorization: Bearer <token>`.
+### 3. Create the database schema
 
-### Auth (`/auth`)
+```bash
+mysql -u root -p < database/schema.sql
+```
 
-| Method | Path                    | Auth | Description                                  |
-| ------ | ----------------------- | ---- | -------------------------------------------- |
-| POST   | `/auth/register`        | No   | Register with username / email / password    |
-| POST   | `/auth/login`           | No   | Login, returns JWT                           |
-| POST   | `/auth/verifyToken`     | Yes  | Validate token, return user info             |
-| POST   | `/auth/userInDb`        | Yes  | Check if token owner still exists in DB      |
-| GET    | `/auth/google`          | No   | Start Google OAuth flow                      |
-| GET    | `/auth/google/callback` | No   | Google OAuth callback (redirects with token) |
-| GET    | `/auth/logout`          | No   | Destroy session, redirect to frontend        |
+### 4. Create environment files
 
-### User data (`/api`)
+macOS/Linux:
 
-| Method | Path                   | Description                                      |
-| ------ | ---------------------- | ------------------------------------------------ |
-| GET    | `/api/data`            | Get user settings (email, macro targets)         |
-| PUT    | `/api/data`            | Update email, nationality, macro targets         |
-| GET    | `/api/food`            | Get ingredients, meals, and today's log          |
-| POST   | `/api/ingredient`      | Create a new ingredient                          |
-| PUT    | `/api/ingredient`      | Update an existing ingredient                    |
-| DELETE | `/api/ingredient`      | Delete ingredient (also removes dependent meals) |
-| POST   | `/api/meal`            | Create a named meal with ingredients             |
-| PUT    | `/api/meal`            | Edit a meal                                      |
-| DELETE | `/api/meal`            | Delete a meal                                    |
-| POST   | `/api/eaten`           | Log a meal as eaten today                        |
-| DELETE | `/api/eaten`           | Remove a single eaten entry                      |
-| DELETE | `/api/eaten/all`       | Clear all eaten entries (end-of-day save)        |
-| POST   | `/api/history`         | Save a daily macro snapshot                      |
-| GET    | `/api/history`         | Fetch all saved daily snapshots                  |
-| POST   | `/api/product/search`  | Full-text search in global products DB           |
-| POST   | `/api/product/barcode` | Look up a product by barcode                     |
+```bash
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
 
----
+PowerShell:
 
-## Database Schema
+```powershell
+Copy-Item server/.env.example server/.env
+Copy-Item client/.env.example client/.env
+```
 
-See [`database/schema.sql`](database/schema.sql) for the complete DDL.
+### 5. Fill in the environment values
 
-| Table           | Purpose                                            |
-| --------------- | -------------------------------------------------- |
-| `user`          | Accounts (password or Google-only)                 |
-| `nut_values`    | Per-user daily macro targets                       |
-| `food`          | User-defined ingredients (values per 100 g)        |
-| `meal`          | Named meals (collections of ingredients)           |
-| `meal_food`     | Ingredient rows belonging to a meal (with grams)   |
-| `eaten_meal`    | Meals logged as eaten today                        |
-| `eaten_history` | Saved daily macro snapshots (for streak / history) |
-| `products`      | Global product database (barcode + name search)    |
+Server variables in `server/.env`:
 
----
+- `DBHOST`
+- `DBPORT`
+- `DBUSER`
+- `DBPASSWORD`
+- `DBNAME`
+- `JWT_SECRET`
+- `SESSION_SECRET`
+- `FRONTEND_URL`
+- `PORT`
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` if Google login is enabled
+
+Client variables in `client/.env`:
+
+- `VITE_API_URL`, for example `http://localhost:3001`
+
+### 6. Start the application
+
+Backend:
+
+```bash
+cd server
+npm start
+```
+
+Frontend:
+
+```bash
+cd client
+npm run dev
+```
+
+### 7. Open the app
+
+`http://localhost:5173`
 
 ## Scripts
 
-**Client:**
+### Client
 
-| Command          | Description                       |
-| ---------------- | --------------------------------- |
-| `npm run dev`    | Start Vite dev server             |
-| `npm run build`  | Production build (`client/dist/`) |
-| `npm run lint`   | Lint with ESLint                  |
-| `npm run format` | Format with Prettier              |
+| Command           | Description                                         |
+| ----------------- | --------------------------------------------------- |
+| `npm run dev`     | Start the Vite dev server                           |
+| `npm run build`   | Run TypeScript build and create a production bundle |
+| `npm run preview` | Preview the production build locally                |
+| `npm run lint`    | Run ESLint on `src/`                                |
+| `npm run format`  | Format frontend source files with Prettier          |
 
-**Server:**
+### Server
 
-| Command          | Description                 |
-| ---------------- | --------------------------- |
-| `npm start`      | Start Express server        |
-| `npm run lint`   | Lint & auto-fix with ESLint |
-| `npm run format` | Format with Prettier        |
+| Command          | Description                                   |
+| ---------------- | --------------------------------------------- |
+| `npm start`      | Start the Express server                      |
+| `npm run lint`   | Run ESLint with auto-fix                      |
+| `npm run format` | Format the server project with Prettier       |
+| `npm test`       | Placeholder script, currently not implemented |
 
----
+## Build
+
+Frontend production build:
+
+```bash
+cd client
+npm run build
+```
+
+Output is generated in `client/dist`.
+
+## Runtime Notes
+
+- The backend listens on `PORT`, defaulting to `3001`.
+- The frontend expects the backend base URL from `VITE_API_URL`.
+- CORS is restricted to `FRONTEND_URL`.
+- Google OAuth is optional; leaving those credentials unset disables SSO in practice.
+
+## Health Check
+
+| Endpoint      | Response             |
+| ------------- | -------------------- |
+| `GET /health` | `{ "status": "ok" }` |
+
+## API Overview
+
+All `/api/*` routes require `Authorization: Bearer <token>`.
+
+### Auth Routes
+
+| Method | Path                    | Auth | Description                                                     |
+| ------ | ----------------------- | ---- | --------------------------------------------------------------- |
+| `POST` | `/auth/register`        | No   | Register a new user with username, email, and password          |
+| `POST` | `/auth/login`           | No   | Log in with username and password                               |
+| `POST` | `/auth/verifyToken`     | Yes  | Validate a token and return the authenticated user              |
+| `POST` | `/auth/userInDb`        | Yes  | Check whether the token owner still exists                      |
+| `GET`  | `/auth/google`          | No   | Start the Google OAuth flow                                     |
+| `GET`  | `/auth/google/callback` | No   | OAuth callback that redirects back to the frontend with a token |
+| `GET`  | `/auth/logout`          | No   | Log out the Passport session and redirect to the frontend       |
+
+### Protected Routes
+
+| Method   | Path                   | Description                                |
+| -------- | ---------------------- | ------------------------------------------ |
+| `GET`    | `/api/data`            | Fetch profile data and macro targets       |
+| `PUT`    | `/api/data`            | Update profile data and macro targets      |
+| `GET`    | `/api/food`            | Fetch ingredients, meals, and eaten items  |
+| `POST`   | `/api/ingredient`      | Create an ingredient                       |
+| `PUT`    | `/api/ingredient`      | Update an ingredient                       |
+| `DELETE` | `/api/ingredient`      | Delete an ingredient                       |
+| `POST`   | `/api/meal`            | Create a meal                              |
+| `PUT`    | `/api/meal`            | Update a meal                              |
+| `DELETE` | `/api/meal`            | Delete a meal                              |
+| `POST`   | `/api/eaten`           | Log a meal as eaten                        |
+| `DELETE` | `/api/eaten`           | Delete a single eaten entry                |
+| `DELETE` | `/api/eaten/all`       | Clear today's eaten entries                |
+| `POST`   | `/api/history`         | Save a daily history snapshot              |
+| `GET`    | `/api/history`         | Fetch history snapshots                    |
+| `POST`   | `/api/product/search`  | Search the shared product database by name |
+| `POST`   | `/api/product/barcode` | Look up a product by barcode               |
+
+## Database
+
+The schema lives in `database/schema.sql` and creates these main tables:
+
+| Table           | Purpose                                 |
+| --------------- | --------------------------------------- |
+| `user`          | Local and Google-authenticated accounts |
+| `nut_values`    | Per-user calorie and macro targets      |
+| `food`          | User-defined ingredients                |
+| `meal`          | Saved meals                             |
+| `meal_food`     | Ingredient rows belonging to a meal     |
+| `eaten_meal`    | Meals logged for the current day        |
+| `eaten_history` | Saved daily nutrition history           |
+| `products`      | Shared barcode and product lookup data  |
+
+The `products` table is created by the schema, but product data must be populated separately.
+
+## Project Structure
+
+```text
+nutrition-app/
+├── client/
+│   ├── public/
+│   │   └── wasm/               # Scanbot Web SDK assets
+│   ├── src/
+│   │   ├── components/         # UI components and modals
+│   │   ├── context/            # React context providers
+│   │   ├── countries/          # Country data for profile settings
+│   │   ├── i18n/               # i18n setup and locale files
+│   │   ├── pages/              # App and login pages
+│   │   └── types/              # Shared frontend types
+│   └── vite.config.ts          # Vite + PWA configuration
+├── database/
+│   └── schema.sql              # MySQL schema
+├── server/
+│   ├── src/
+│   │   ├── config/             # Runtime config and rate limiters
+│   │   ├── middleware/         # Token verification and error helpers
+│   │   ├── routes/             # Express route modules
+│   │   ├── auth.js             # Auth router and Passport setup
+│   │   ├── db.js               # MySQL connection setup
+│   │   └── routes.js           # Protected API router aggregation
+│   └── app.js                  # Express entry point
+└── README.md
+```
+
+## Notes
+
+- The frontend currently ships with an English locale file in `client/src/i18n/locales/en.json`.
+- There is no real automated test suite configured yet.
 
 ## License
 
-This project is provided as-is for portfolio purposes.
+Provided as-is for portfolio and learning purposes.
